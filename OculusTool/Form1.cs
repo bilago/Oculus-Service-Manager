@@ -384,6 +384,35 @@ namespace OculusTool
         {
             WDcheckService();
         }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// This will restart the DK2 drivers for the Camera and the HMD (4 drivers total)
+        /// </summary>
+        private void restartDrivers()
+        {
+            string program;
+            if (Program.is64BitOperatingSystem)
+                program = "devcon64.exe";
+            else
+                program = "devcon32.exe";
+
+            if (getResource.get("OculusTool", program))
+            {
+                stopService();
+                startHidden(program, " restart *VID_2833*211*");
+                startHidden(program, " restart *VID_2833*_0201*0002*");
+                startService();
+                MessageBox.Show("Drivers have been restarted sucessfully!","Sucess!",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
+                File.Delete(program);
+            }
+            else
+                MessageBox.Show("Unable to restart the driver!, Extraction Error!");
+        }
                
     }
 }

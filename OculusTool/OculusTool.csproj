@@ -79,6 +79,8 @@
     <EmbeddedResource Include="CustomWatchdogx64.xml" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="devcon32.exe" />
+    <EmbeddedResource Include="devcon64.exe" />
     <Content Include="Oculus.ico" />
     <Content Include="PerfCenterCpl.ico" />
   </ItemGroup>
