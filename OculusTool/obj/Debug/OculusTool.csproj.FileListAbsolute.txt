@@ -1,0 +1,8 @@
+C:\OculusTool\OculusTool\obj\Debug\OculusServiceManager.exe
+C:\OculusTool\OculusTool\obj\Debug\OculusServiceManager.pdb
+C:\OculusTool\OculusTool\bin\Debug\OculusServiceManager.exe
+C:\OculusTool\OculusTool\bin\Debug\OculusServiceManager.pdb
+C:\OculusTool\OculusTool\obj\Debug\OculusTool.csprojResolveAssemblyReference.cache
+C:\OculusTool\OculusTool\obj\Debug\OculusTool.Form1.resources
+C:\OculusTool\OculusTool\obj\Debug\OculusTool.Properties.Resources.resources
+C:\OculusTool\OculusTool\obj\Debug\OculusTool.csproj.GenerateResource.Cache
