@@ -387,7 +387,7 @@ namespace OculusTool
 
         private void button4_Click(object sender, EventArgs e)
         {
-
+            restartDrivers();
         }
 
         /// <summary>
@@ -395,6 +395,16 @@ namespace OculusTool
         /// </summary>
         private void restartDrivers()
         {
+            button1.Enabled = false;
+            button2.Enabled = false;
+            button3.Enabled = false;
+            button4.Enabled = false;
+            bool custWD = false;
+            if (checkBox1.Checked)
+            {
+                custWD = true;
+                checkBox1.Checked = false;
+            }
             string program;
             if (Program.is64BitOperatingSystem)
                 program = "devcon64.exe";
@@ -404,14 +414,24 @@ namespace OculusTool
             if (getResource.get("OculusTool", program))
             {
                 stopService();
-                startHidden(program, " restart *VID_2833*211*");
-                startHidden(program, " restart *VID_2833*_0201*0002*");
+                System.Threading.Thread.Sleep(500);
+                startHidden("cmd.exe", "/c "+program+" restart *VID_2833*211* >debug.txt");
+                startHidden("cmd.exe", "/c " +program+" restart *VID_2833*_0201*0002* >>debugb.txt");
+                //startHidden(program, " restart *VID_2833*211*");
+                //startHidden(program, " restart *VID_2833*_0201*0002*");
+                System.Threading.Thread.Sleep(500);
                 startService();
                 MessageBox.Show("Drivers have been restarted sucessfully!","Sucess!",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
                 File.Delete(program);
             }
             else
                 MessageBox.Show("Unable to restart the driver!, Extraction Error!");
+            if (custWD)
+                checkBox1.Checked = true;
+            button1.Enabled = true;
+            button2.Enabled = true;
+            button3.Enabled = true;
+            button4.Enabled = true;
         }
                
     }
