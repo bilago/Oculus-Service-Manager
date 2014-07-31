@@ -233,22 +233,17 @@ namespace OculusTool
             else
                 exeName = "OVRService_x86.exe";
             string workPath = Path.Combine(installPath, "Service\\");
-            string fullRunPath = Path.Combine(installPath, "Service\\" + exeName);
-            
+            string fullRunPath = Path.Combine(installPath, "Service\\" + exeName);            
             
             if (checkBox2.Checked)
             {                                
                 string sdePath = Path.Combine(workPath, "sde.exe");
+                //Transferring the oculus driver to current directory. SDE.exe doesn't seem to work on files outside 
                 File.Copy(fullRunPath, Environment.CurrentDirectory + "\\" + exeName, true);
-                
-               
-
-                startHidden("CMD.EXE", "/c 7z.exe x -y sde.7z *",true);
-
-                //Process.Start("CMD.EXE", "/c sde.exe -- \"" + fullRunPath + "\" >debug.txt");
+                //Extracting sde.7z to working directory
+                startHidden("CMD.EXE", "/c 7z.exe x -y sde.7z *",true);                
+                //Running the Emulation in the working directory
                 startHidden("CMD.EXE", "/c sde.exe -- " + exeName,false);
-               
-                
             }
             else if (checkBox1.Checked)
             {
@@ -440,13 +435,12 @@ namespace OculusTool
             {
                 stopService();
                 System.Threading.Thread.Sleep(500);
+                //Restarting HardwareID's. Firmware upgrades may break this (v3.x ++)
                 startHidden("cmd.exe", "/c "+program+" restart *VID_2833*PID_0201*REV_0002*",true);
-                startHidden("cmd.exe", "/c " + program + " restart *VID_2833*PID_0021*REV_02*",true);
-                //startHidden(program, " restart *VID_2833*REV_211*");
-                //startHidden(program, " restart *VID_2833*_0201*0002*");
+                startHidden("cmd.exe", "/c " + program + " restart *VID_2833*PID_0021*REV_02*",true);              
                 System.Threading.Thread.Sleep(500);
                 startService();
-                MessageBox.Show("Drivers have been restarted sucessfully!","Sucess!",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
+                MessageBox.Show("Drivers have been restarted successfully!","Success!",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
                 try
                 {
                     File.Delete(program);
@@ -468,11 +462,21 @@ namespace OculusTool
             button4.Enabled = true;
         }
 
+        /// <summary>
+        /// This will check the status of the service regardless if the watchdog is enabled.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void timer2_Tick(object sender, EventArgs e)
         {            
             label1.Text = "Service Status: " + checkService();
         }
 
+        /// <summary>
+        /// Enables and disables the SSE-Emulation Fix
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void checkBox2_CheckedChanged(object sender, EventArgs e)
         {
             bool passA;
@@ -480,6 +484,7 @@ namespace OculusTool
             if (!checkBox2.Checked)
             {
                 stopService();
+                //cleanup
                 File.Delete("7z.exe");
                 File.Delete("sde.exe");
                 File.Delete("sde.7z");
@@ -491,6 +496,7 @@ namespace OculusTool
                 }
                 catch
                 {
+                    //Empty catch in case Directory didn't exist - no need to catch it
                 }
             }
             else
@@ -499,11 +505,9 @@ namespace OculusTool
                 passA = getResource.get("OculusTool", "7z.exe");
                 passB = getResource.get("OculusTool", "sde.7z");                
             }
-
          
             startService();
             timer2.Start();
-        }
-               
+        }               
     }
 }
