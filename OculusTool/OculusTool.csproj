@@ -52,6 +52,7 @@
     <Compile Include="getResource.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="wdSchedTask.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -74,10 +75,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <EmbeddedResource Include="sde.7z" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="CustomWatchdogx32.xml" />
-    <EmbeddedResource Include="CustomWatchdogx64.xml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="devcon32.exe" />

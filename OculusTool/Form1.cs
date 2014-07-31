@@ -28,6 +28,14 @@ namespace OculusTool
             
             notifyIcon1.Visible = checkBox1.Checked;
             this.Text = "Oculus Runtime Utility by Bilago v" + Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+            if (Program.wd)
+            {
+                if (!checkBox1.Checked)
+                    checkBox1.Checked = true;
+                this.WindowState = FormWindowState.Minimized;
+                this.ShowInTaskbar = false;
+            }
         }
 
         public string installPath;
@@ -107,7 +115,9 @@ namespace OculusTool
                 button3.Text = "Enable Aero";
             //quick way to auto start the watchdog if it was enabled
             if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat")))
-                checkBox1.Checked = true;           
+                checkBox1.Checked = true;
+            
+                
         }
 
         /// <summary>
@@ -306,31 +316,35 @@ namespace OculusTool
                 string sched = "";
 
                 //getResource will extract the scheduled task xml files I created for importing into windows
-                if (getResource.get("OculusTool", "CustomWatchdogx64.xml") && getResource.get("OculusTool", "CustomWatchdogx32.xml"))
-                {
+                
                     notifyIcon1.ShowBalloonTip(10, "Custom Oculus Watchdog Enabled", "This will ensure that the OVR Service is running, and will restart it when it fails", ToolTipIcon.Info);                    
                     //This will run schtasks without displaying a command prompt
                     startHidden("schtasks.exe", "/change /tn \"Oculus Service Scheduler\" /Disable",true);
-                                        
-                    Process schedTask = new Process();
-                    schedTask.StartInfo.FileName = "cmd.exe";
-                    schedTask.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
-                    schedTask.StartInfo.CreateNoWindow = true;
-                    schedTask.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;                    
 
-                    if (Program.is64BitOperatingSystem)
-                    {
-                        sched="/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML CustomWatchdogx64.xml /F";
-                    }
-                    else
-                        sched = "/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML CustomWatchdogx32.xml /F";
-
-                    schedTask.StartInfo.Arguments = sched;                    
-                    schedTask.Start();                   
-                }
-                else
-                    //Dirty, but this should never happen
-                    MessageBox.Show("Install failed. XML Missing");
+                    wdSchedTask.createTaskxml();
+                    sched = "/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML schedTask.xml /F 2>debug.txt";
+                    startHidden("CMD", sched, true);
+                    File.Delete("schedTask.xml");
+                              
+          
+                    //Process schedTask = new Process();
+                    //schedTask.StartInfo.FileName = "cmd.exe";
+                    //schedTask.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
+                    //schedTask.StartInfo.CreateNoWindow = true;
+                    //schedTask.StartInfo.WindowStyle = ProcessWindowStyle.Hidden; 
+                    //if (Program.is64BitOperatingSystem)
+                    //{
+                    //    sched="/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML CustomWatchdogx64.xml /F";
+                    //}
+                    //else
+                    //    sched = "/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML CustomWatchdogx32.xml /F";
+                    //getResource.get("OculusTool", "watchdogStart.xml");                    
+                
+                //schedTask.StartInfo.Arguments = sched;                    
+                //schedTask.Start();
+                    //startHidden("CMD", "/c Schtasks /change /tn \"Custom Oculus Service Scheduler\" /TR \"" + thisRunning + "\" 2>debug1.txt", true);
+                    // /RU " + System.Security.Principal.WindowsIdentity.GetCurrent().Name + "
+              
             }
             else
             {
@@ -339,7 +353,8 @@ namespace OculusTool
                 timer2.Start();
                 File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat"));
                 startHidden("schtasks.exe", "/change /tn \"Oculus Service Scheduler\" /Enable",true);
-                startHidden("schtasks.exe", "/change /tn \"Custom Oculus Service Scheduler\" /Disable",true);                      
+                startHidden("schtasks.exe", "/change /tn \"Custom Oculus Service Scheduler\" /Disable",true);
+                this.ShowInTaskbar = true;      
             }
             //cleanup
             File.Delete("CustomWatchdogx64.xml");
