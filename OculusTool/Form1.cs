@@ -114,8 +114,12 @@ namespace OculusTool
             else
                 button3.Text = "Enable Aero";
             //quick way to auto start the watchdog if it was enabled
+            
             if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat")))
                 checkBox1.Checked = true;
+            if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat")))
+                checkBox2.Checked=true;
+            
             
                 
         }
@@ -503,11 +507,13 @@ namespace OculusTool
                 File.Delete("7z.exe");
                 File.Delete("sde.exe");
                 File.Delete("sde.7z");
+                File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat"));
                 try
                 {
                     Directory.Delete("ia32", true);
                     Directory.Delete("intel64", true);
                     Directory.Delete("misc", true);
+                    
                 }
                 catch
                 {
@@ -516,6 +522,7 @@ namespace OculusTool
             }
             else
             {
+                File.WriteAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat"), "1");
                 timer2.Stop();
                 passA = getResource.get("OculusTool", "7z.exe");
                 passB = getResource.get("OculusTool", "sde.7z");                
