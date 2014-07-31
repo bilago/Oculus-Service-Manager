@@ -24,6 +24,8 @@ namespace OculusTool
         public Form1()
         {
             InitializeComponent();
+            timer2.Start();
+            
             notifyIcon1.Visible = checkBox1.Checked;
             this.Text = "Oculus Runtime Utility by Bilago v" + Assembly.GetExecutingAssembly().GetName().Version.ToString();
         }
@@ -116,13 +118,14 @@ namespace OculusTool
         public string checkService()
         {
             foreach (Process p in Process.GetProcesses())
-            {
-                if (p.ProcessName.Contains("OVRService_"))
+            {                
+                if (p.ProcessName.ToLower().Contains("ovrservice_"))
                 {
                     button1.Text = "Stop Service";
                     return "Running";
                 }
             }
+            
             button1.Text = "Start Service";
             return "Stopped";
         }
@@ -212,7 +215,7 @@ namespace OculusTool
                 
             }
             //Some times it takes the process some time to fully quit, so lets sleep a little
-            System.Threading.Thread.Sleep(500);
+            System.Threading.Thread.Sleep(800);
             label1.Text = "Service Status: " + checkService();
         }
 
@@ -229,12 +232,29 @@ namespace OculusTool
             }
             else
                 exeName = "OVRService_x86.exe";
+            string workPath = Path.Combine(installPath, "Service\\");
+            string fullRunPath = Path.Combine(installPath, "Service\\" + exeName);
             
-            if (checkBox1.Checked)
+            
+            if (checkBox2.Checked)
+            {                                
+                string sdePath = Path.Combine(workPath, "sde.exe");
+                File.Copy(fullRunPath, Environment.CurrentDirectory + "\\" + exeName, true);
+                
+               
+
+                startHidden("CMD.EXE", "/c 7z.exe x -y sde.7z *",true);
+
+                //Process.Start("CMD.EXE", "/c sde.exe -- \"" + fullRunPath + "\" >debug.txt");
+                startHidden("CMD.EXE", "/c sde.exe -- " + exeName,false);
+               
+                
+            }
+            else if (checkBox1.Checked)
             {
                 //Starting the service directly since my watchdog is enabled
                 Process scriptProc = new Process();
-                scriptProc.StartInfo.FileName = Path.Combine(installPath, "Service\\" + exeName);
+                scriptProc.StartInfo.FileName = fullRunPath;
                 scriptProc.StartInfo.WorkingDirectory = Path.Combine(installPath, "Service");                
                 scriptProc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 scriptProc.StartInfo.CreateNoWindow = true;
@@ -260,7 +280,7 @@ namespace OculusTool
             configUtil.Start();
 
             //More sleep before checking service state
-            System.Threading.Thread.Sleep(200);
+            System.Threading.Thread.Sleep(600);
             label1.Text = "Service Status: " + checkService();
         }
 
@@ -286,6 +306,7 @@ namespace OculusTool
             if (checkBox1.Checked)
             {
                 timer1.Start();
+                timer2.Stop();
                 File.WriteAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat"), "1");
                 string sched = "";
 
@@ -294,7 +315,7 @@ namespace OculusTool
                 {
                     notifyIcon1.ShowBalloonTip(10, "Custom Oculus Watchdog Enabled", "This will ensure that the OVR Service is running, and will restart it when it fails", ToolTipIcon.Info);                    
                     //This will run schtasks without displaying a command prompt
-                    startHidden("schtasks.exe", "/change /tn \"Oculus Service Scheduler\" /Disable");
+                    startHidden("schtasks.exe", "/change /tn \"Oculus Service Scheduler\" /Disable",true);
                                         
                     Process schedTask = new Process();
                     schedTask.StartInfo.FileName = "cmd.exe";
@@ -320,9 +341,10 @@ namespace OculusTool
             {
                 //stopping watchdog
                 timer1.Stop();
+                timer2.Start();
                 File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat"));
-                startHidden("schtasks.exe", "/change /tn \"Oculus Service Scheduler\" /Enable");
-                startHidden("schtasks.exe", "/change /tn \"Custom Oculus Service Scheduler\" /Disable");                      
+                startHidden("schtasks.exe", "/change /tn \"Oculus Service Scheduler\" /Enable",true);
+                startHidden("schtasks.exe", "/change /tn \"Custom Oculus Service Scheduler\" /Disable",true);                      
             }
             //cleanup
             File.Delete("CustomWatchdogx64.xml");
@@ -334,7 +356,7 @@ namespace OculusTool
         /// </summary>
         /// <param name="process">Name of the program to execute</param>
         /// <param name="arguments">Arguments to supply to the program</param>
-        private void startHidden(string process, string arguments)
+        private void startHidden(string process, string arguments,bool wait)
         {
             Process startProcess = new Process();
             startProcess.StartInfo.FileName = process;
@@ -343,6 +365,8 @@ namespace OculusTool
             startProcess.StartInfo.CreateNoWindow = true;
             startProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             startProcess.Start();
+            if (wait)
+                startProcess.WaitForExit(3000);
         }
 
         /// <summary>
@@ -372,6 +396,7 @@ namespace OculusTool
         private void notifyIcon1_Click(object sender, EventArgs e)
         {
             this.Show();
+            this.BringToFront();
             this.WindowState = FormWindowState.Normal;
         }
 
@@ -415,14 +440,23 @@ namespace OculusTool
             {
                 stopService();
                 System.Threading.Thread.Sleep(500);
-                startHidden("cmd.exe", "/c "+program+" restart *VID_2833*211* >debug.txt");
-                startHidden("cmd.exe", "/c " +program+" restart *VID_2833*_0201*0002* >>debugb.txt");
-                //startHidden(program, " restart *VID_2833*211*");
+                startHidden("cmd.exe", "/c "+program+" restart *VID_2833*PID_0201*REV_0002*",true);
+                startHidden("cmd.exe", "/c " + program + " restart *VID_2833*PID_0021*REV_02*",true);
+                //startHidden(program, " restart *VID_2833*REV_211*");
                 //startHidden(program, " restart *VID_2833*_0201*0002*");
                 System.Threading.Thread.Sleep(500);
                 startService();
                 MessageBox.Show("Drivers have been restarted sucessfully!","Sucess!",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
-                File.Delete(program);
+                try
+                {
+                    File.Delete(program);
+                }
+                catch
+                {
+                    //just in case the file cannot delete... Sleep a second and try one more time.
+                    System.Threading.Thread.Sleep(1000);
+                    File.Delete(program);
+                }
             }
             else
                 MessageBox.Show("Unable to restart the driver!, Extraction Error!");
@@ -432,6 +466,43 @@ namespace OculusTool
             button2.Enabled = true;
             button3.Enabled = true;
             button4.Enabled = true;
+        }
+
+        private void timer2_Tick(object sender, EventArgs e)
+        {            
+            label1.Text = "Service Status: " + checkService();
+        }
+
+        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            bool passA;
+            bool passB;
+            if (!checkBox2.Checked)
+            {
+                stopService();
+                File.Delete("7z.exe");
+                File.Delete("sde.exe");
+                File.Delete("sde.7z");
+                try
+                {
+                    Directory.Delete("ia32", true);
+                    Directory.Delete("intel64", true);
+                    Directory.Delete("misc", true);
+                }
+                catch
+                {
+                }
+            }
+            else
+            {
+                timer2.Stop();
+                passA = getResource.get("OculusTool", "7z.exe");
+                passB = getResource.get("OculusTool", "sde.7z");                
+            }
+
+         
+            startService();
+            timer2.Start();
         }
                
     }
