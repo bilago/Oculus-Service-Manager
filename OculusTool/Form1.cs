@@ -253,11 +253,21 @@ namespace OculusTool
             {                                
                 string sdePath = Path.Combine(workPath, "sde.exe");
                 //Transferring the oculus driver to current directory. SDE.exe doesn't seem to work on files outside 
-                File.Copy(fullRunPath, Environment.CurrentDirectory + "\\" + exeName, true);
-                //Extracting sde.7z to working directory
-                startHidden("CMD.EXE", "/c 7z.exe x -y sde.7z *",true);                
-                //Running the Emulation in the working directory
-                startHidden("CMD.EXE", "/c sde.exe -- " + exeName,false);
+                try
+                {
+                    if (!File.Exists(Environment.CurrentDirectory + "\\" + exeName))
+                        File.Copy(fullRunPath, Environment.CurrentDirectory + "\\" + exeName, true);
+
+                    //Extracting sde.7z to working directory
+                    startHidden("sde_7z.exe", "-o \"" + Environment.CurrentDirectory + "\" -y 2>extractDebugErrors.txt", true);
+                    //Running the Emulation in the working directory
+                    startHidden("CMD.EXE", "/c sde.exe -- " + exeName + " 1>SSEFIX_debugStandard.txt 2>SSEFIX_debugError.txt", false);
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Fatal Error while Enabling the SSE-Fix. Full error written to SSE-Crash.log", "Fatal Error for SSE-Emulation");
+                    File.WriteAllText("SSE-Crash.log", ex.ToString());
+                }
             }
             else if (checkBox1.Checked)
             {
@@ -331,24 +341,6 @@ namespace OculusTool
                     File.Delete("schedTask.xml");
                               
           
-                    //Process schedTask = new Process();
-                    //schedTask.StartInfo.FileName = "cmd.exe";
-                    //schedTask.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
-                    //schedTask.StartInfo.CreateNoWindow = true;
-                    //schedTask.StartInfo.WindowStyle = ProcessWindowStyle.Hidden; 
-                    //if (Program.is64BitOperatingSystem)
-                    //{
-                    //    sched="/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML CustomWatchdogx64.xml /F";
-                    //}
-                    //else
-                    //    sched = "/c schtasks /Create /tn \"Custom Oculus Service Scheduler\" /XML CustomWatchdogx32.xml /F";
-                    //getResource.get("OculusTool", "watchdogStart.xml");                    
-                
-                //schedTask.StartInfo.Arguments = sched;                    
-                //schedTask.Start();
-                    //startHidden("CMD", "/c Schtasks /change /tn \"Custom Oculus Service Scheduler\" /TR \"" + thisRunning + "\" 2>debug1.txt", true);
-                    // /RU " + System.Security.Principal.WindowsIdentity.GetCurrent().Name + "
-              
             }
             else
             {
@@ -380,7 +372,10 @@ namespace OculusTool
             startProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             startProcess.Start();
             if (wait)
-                startProcess.WaitForExit(3000);
+                if (!startProcess.WaitForExit(3000))
+                    if (!startProcess.WaitForExit(5000))
+                        if (!startProcess.WaitForExit(5000))
+                            startProcess.Kill();
         }
 
         /// <summary>
@@ -498,15 +493,18 @@ namespace OculusTool
         /// <param name="e"></param>
         private void checkBox2_CheckedChanged(object sender, EventArgs e)
         {
-            bool passA;
-            bool passB;
+            button1.Enabled = false;
+            button2.Enabled = false;
+            button3.Enabled = false;
+            button4.Enabled = false;
+            
+            bool passA;            
             if (!checkBox2.Checked)
             {
                 stopService();
-                //cleanup
-                File.Delete("7z.exe");
+                //cleanup                
                 File.Delete("sde.exe");
-                File.Delete("sde.7z");
+                File.Delete("sde_7z.exe");
                 File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat"));
                 try
                 {
@@ -524,12 +522,16 @@ namespace OculusTool
             {
                 File.WriteAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat"), "1");
                 timer2.Stop();
-                passA = getResource.get("OculusTool", "7z.exe");
-                passB = getResource.get("OculusTool", "sde.7z");                
+                passA = getResource.get("OculusTool", "sde_7z.exe");                             
             }
          
             startService();
-            timer2.Start();
+            timer2.Start(); 
+            
+            button1.Enabled = true;
+            button2.Enabled = true;
+            button3.Enabled = true;
+            button4.Enabled = true;
         }               
     }
 }

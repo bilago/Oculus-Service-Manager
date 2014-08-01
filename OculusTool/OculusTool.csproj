@@ -74,12 +74,11 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="sde.7z" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="sde_7z.exe" />
     <EmbeddedResource Include="devcon32.exe" />
     <EmbeddedResource Include="devcon64.exe" />
-    <EmbeddedResource Include="7z.exe" />
     <Content Include="Oculus.ico" />
     <Content Include="PerfCenterCpl.ico" />
   </ItemGroup>
