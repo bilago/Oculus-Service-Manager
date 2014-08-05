@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
+using System.Management;
+using System.ServiceProcess;
 
 namespace OculusTool
 {
@@ -532,6 +534,144 @@ namespace OculusTool
             button2.Enabled = true;
             button3.Enabled = true;
             button4.Enabled = true;
+        }
+
+        /// <summary>
+        /// Various system debug information to help troubleshoot problems
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.Enabled = false;
+            List<string> report = new List<string>();
+            report.Add("Oculus Troubleshooting Report: ");
+            report.Add("");
+            report.Add("Operating System:");
+            string output = Environment.OSVersion.VersionString;
+            string program;
+            if (Program.is64BitOperatingSystem)
+            {
+                program = "devcon64.exe";
+                output = output + " 64bit";
+            }
+            else
+            {
+                program = "devcon32.exe";
+                output = output + " 64bit";
+            }
+            report.Add(output);
+            report.Add("");
+            report.Add("CPU Name:");
+            ManagementObjectSearcher mos =  new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_Processor");
+            foreach (ManagementObject mo in mos.Get())
+            {
+                report.Add(mo["Name"].ToString());
+            }
+            report.Add("");
+            report.Add("Graphics Card name: ");
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DisplayConfiguration");
+
+            string graphicsCard = string.Empty;
+            foreach (ManagementObject mo in searcher.Get())
+            {
+                foreach (PropertyData property in mo.Properties)
+                {
+                    if (property.Name == "Description")
+                    {
+                        graphicsCard = property.Value.ToString();
+                    }
+                }
+            }
+            if (!string.IsNullOrEmpty(graphicsCard))
+                report.Add(graphicsCard);
+            else
+                report.Add("Graphics card not detected");
+            report.Add("");
+            report.Add("Screen information:");
+            foreach (var screen in Screen.AllScreens)
+            {
+                // For each screen, add the screen properties to a list box.
+                report.Add("Device Name: " + screen.DeviceName);
+                report.Add("Bounds: " + screen.Bounds.ToString());
+                report.Add("Type: " + screen.GetType().ToString());
+                report.Add("Working Area: " + screen.WorkingArea.ToString());
+                report.Add("Primary Screen: " + screen.Primary.ToString());
+                report.Add("");
+            }
+            report.Add("");
+            report.Add("Oculus Install Path: " + installPath);
+            report.Add("");
+            if (getResource.get("OculusTool", program))
+            {           
+                report.Add("Oculus Service Status:");
+
+                bool service = false;
+                bool configutil = false;
+                foreach (Process p in Process.GetProcesses())
+                {
+                    if (p.ProcessName.ToLower().Contains("ovrservice_"))
+                    {
+                        service = true;  
+                    }
+                    if (p.ProcessName.ToLower().Contains("oculusconfigutil"))
+                    {
+                        configutil = true;
+                    }
+                }
+                if (service)
+                    report.Add("OVR Service: Running");
+                else
+                    report.Add("OVR Service: Not Running");
+                if (configutil)
+                   report.Add("Config Utility: Running");
+                else
+                    report.Add("Config Utility: Not Running");
+                report.Add("");
+                report.Add("Oculus Connected Devices:");
+
+                startHidden("cmd.exe", "/c " + program + " find *VID_2833*PID_0201*REV_0002* >devConOutput.txt", true);
+                startHidden("cmd.exe", "/c " + program + " find *VID_2833*PID_0021*REV_02* >>devConOutput.txt", true);
+                foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
+                File.Delete("devConOutput.txt");
+                report.Add("");
+                report.Add("===================================================================");
+                report.Add("Services:");
+                foreach (ServiceController sc in ServiceController.GetServices())
+                {
+                    report.Add(sc.DisplayName + ": " + sc.Status.ToString());
+                }
+                report.Add("");
+                report.Add("Listing All Installed Drivers: ");
+                startHidden("cmd.exe", "/c " + program + " driverfiles * >devConOutput.txt", true);
+                foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
+                report.Add("");
+               
+                try
+                {
+                    Clipboard.SetText(string.Join(Environment.NewLine,report.ToArray()));
+                }
+                catch
+                {
+                    try
+                    {
+                    System.Threading.Thread.Sleep(5000);
+                    Clipboard.SetText(string.Join(Environment.NewLine,report.ToArray()));
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Unable to copy troubleshooting data to clipboard. Info has been written to \"Troubleshooting_DeviceInfo.txt\" instead.","Cannot Write To Clipboard");
+                        File.WriteAllLines("Troubleshooting_DeviceInfo.txt",report.ToArray());
+                        this.Enabled = true;
+                        return;
+                    }
+                }
+                MessageBox.Show("Debug info has been copied to clipboard! Paste information into a post or PM for support.");
+                this.Enabled = true;
+                
+              
+            }
         }               
     }
 }
+
