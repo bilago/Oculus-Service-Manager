@@ -10,6 +10,8 @@ namespace OculusTool
 {
     static class Program
     {
+        public static string workingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        
         static bool is64BitProcess = (IntPtr.Size == 8);
         public static bool is64BitOperatingSystem = is64BitProcess || InternalCheckIsWow64();
 
@@ -45,13 +47,14 @@ namespace OculusTool
             }
         }
         public static bool wd = false;
-        public static string exeName = Path.Combine(Environment.CurrentDirectory, Process.GetCurrentProcess().MainModule.FileName);
+        public static string exeName = Path.Combine(workingDirectory, Process.GetCurrentProcess().MainModule.FileName);
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
+            Directory.SetCurrentDirectory(workingDirectory);
             if (args.Length != 0)
                 wd = true;
             Application.EnableVisualStyles();

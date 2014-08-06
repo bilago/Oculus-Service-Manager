@@ -257,11 +257,11 @@ namespace OculusTool
                 //Transferring the oculus driver to current directory. SDE.exe doesn't seem to work on files outside 
                 try
                 {
-                    if (!File.Exists(Environment.CurrentDirectory + "\\" + exeName))
-                        File.Copy(fullRunPath, Environment.CurrentDirectory + "\\" + exeName, true);
+                    if (!File.Exists(Program.workingDirectory + "\\" + exeName))
+                        File.Copy(fullRunPath, Program.workingDirectory + "\\" + exeName, true);
 
                     //Extracting sde.7z to working directory
-                    startHidden("sde_7z.exe", "-o \"" + Environment.CurrentDirectory + "\" -y 2>extractDebugErrors.txt", true);
+                    startHidden("sde_7z.exe", "-o \"" + Program.workingDirectory + "\" -y 2>extractDebugErrors.txt", true);
                     //Running the Emulation in the working directory
                     startHidden("CMD.EXE", "/c sde.exe -- " + exeName + " 1>SSEFIX_debugStandard.txt 2>SSEFIX_debugError.txt", false);
                 }
@@ -369,14 +369,14 @@ namespace OculusTool
             Process startProcess = new Process();
             startProcess.StartInfo.FileName = process;
             startProcess.StartInfo.Arguments = arguments;
-            startProcess.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
+            startProcess.StartInfo.WorkingDirectory = Program.workingDirectory;
             startProcess.StartInfo.CreateNoWindow = true;
             startProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             startProcess.Start();
             if (wait)
                 if (!startProcess.WaitForExit(3000))
                     if (!startProcess.WaitForExit(5000))
-                        if (!startProcess.WaitForExit(5000))
+                        if (!startProcess.WaitForExit(20000))
                             startProcess.Kill();
         }
 
@@ -543,6 +543,8 @@ namespace OculusTool
         /// <param name="e"></param>
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            try
+            {
             this.Enabled = false;
             List<string> report = new List<string>();
             report.Add("Oculus Troubleshooting Report: ");
@@ -603,7 +605,7 @@ namespace OculusTool
             report.Add("Oculus Install Path: " + installPath);
             report.Add("");
             if (getResource.get("OculusTool", program))
-            {           
+            {
                 report.Add("Oculus Service Status:");
 
                 bool service = false;
@@ -612,7 +614,7 @@ namespace OculusTool
                 {
                     if (p.ProcessName.ToLower().Contains("ovrservice_"))
                     {
-                        service = true;  
+                        service = true;
                     }
                     if (p.ProcessName.ToLower().Contains("oculusconfigutil"))
                     {
@@ -624,7 +626,7 @@ namespace OculusTool
                 else
                     report.Add("OVR Service: Not Running");
                 if (configutil)
-                   report.Add("Config Utility: Running");
+                    report.Add("Config Utility: Running");
                 else
                     report.Add("Config Utility: Not Running");
                 report.Add("");
@@ -644,32 +646,50 @@ namespace OculusTool
                 report.Add("");
                 report.Add("Listing All Installed Drivers: ");
                 startHidden("cmd.exe", "/c " + program + " driverfiles * >devConOutput.txt", true);
-                foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
-                report.Add("");
-               
                 try
                 {
-                    Clipboard.SetText(string.Join(Environment.NewLine,report.ToArray()));
+                    foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
+                }
+                catch
+                {
+                    System.Threading.Thread.Sleep(5000);
+                    foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
+                }
+
+                report.Add("");
+
+                try
+                {
+                    Clipboard.SetText(string.Join(Environment.NewLine, report.ToArray()));
+                    File.WriteAllLines("Troubleshooting_Output.txt", report.ToArray());
+                    File.Delete("devConOputput.txt");
                 }
                 catch
                 {
                     try
                     {
-                    System.Threading.Thread.Sleep(5000);
-                    Clipboard.SetText(string.Join(Environment.NewLine,report.ToArray()));
+                        System.Threading.Thread.Sleep(5000);
+                        Clipboard.SetText(string.Join(Environment.NewLine, report.ToArray()));
                     }
                     catch
                     {
-                        MessageBox.Show("Unable to copy troubleshooting data to clipboard. Info has been written to \"Troubleshooting_DeviceInfo.txt\" instead.","Cannot Write To Clipboard");
-                        File.WriteAllLines("Troubleshooting_DeviceInfo.txt",report.ToArray());
+                        MessageBox.Show("Unable to copy troubleshooting data to clipboard. Info has been written to \"Troubleshooting_DeviceInfo.txt\" instead.", "Cannot Write To Clipboard");
+                        File.WriteAllLines("Troubleshooting_DeviceInfo.txt", report.ToArray());
                         this.Enabled = true;
                         return;
                     }
                 }
                 MessageBox.Show("Debug info has been copied to clipboard! Paste information into a post or PM for support.");
+            
                 this.Enabled = true;
                 
               
+            }
+            }
+            catch(Exception ex)
+            {
+                this.Enabled = true;
+                MessageBox.Show("There was a critical error running the troubleshooter. " + ex.Message); 
             }
         }               
     }
