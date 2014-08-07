@@ -121,8 +121,11 @@ namespace OculusTool
                 checkBox1.Checked = true;
             if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat")))
                 checkBox2.Checked=true;
-            
-            
+
+            if (!contextInstalled())
+                linkLabel2.Text = "Install \"Context Adapter\"";
+            else
+                linkLabel2.Text = "Uninstall \"Context Adapter\"";
                 
         }
 
@@ -581,7 +584,10 @@ namespace OculusTool
                 {
                     if (property.Name == "Description")
                     {
-                        graphicsCard = property.Value.ToString();
+                        if (!string.IsNullOrEmpty(graphicsCard))
+                            graphicsCard = graphicsCard +" " + property.Value.ToString();
+                        else
+                            graphicsCard = property.Value.ToString();
                     }
                 }
             }
@@ -637,6 +643,26 @@ namespace OculusTool
                 foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
                 File.Delete("devConOutput.txt");
                 report.Add("");
+                report.Add("Lower Filter Search:");
+                report.Add("");
+                using (RegistryKey classes = Registry.LocalMachine.OpenSubKey("System\\CurrentControlSet\\Control\\Class"))
+                {
+                    foreach (var v in classes.GetSubKeyNames())
+                    {
+                        using (RegistryKey Key = classes.OpenSubKey(v))
+                        {
+                            if (Key != null)
+                                if (Key.GetValue("LowerFilters", null) != null)
+                                {
+
+                                    foreach (string data in (string[])Key.GetValue("Lowerfilters"))
+                                        report.Add(Key.ToString() + " LowerFilters Found: " + data);
+                                }
+                        }
+                    }
+                }
+
+                report.Add("");
                 report.Add("===================================================================");
                 report.Add("Services:");
                 foreach (ServiceController sc in ServiceController.GetServices())
@@ -691,7 +717,68 @@ namespace OculusTool
                 this.Enabled = true;
                 MessageBox.Show("There was a critical error running the troubleshooter. " + ex.Message); 
             }
-        }               
+        }
+
+        private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            if (contextInstalled())
+                contextUninstaller();
+            else
+                contextInstaller();
+
+            if (!contextInstalled())
+                linkLabel2.Text = "Install \"Context Adapter\"";
+            else
+                linkLabel2.Text = "Uninstall \"Context Adapter\"";
+        }
+
+        private void contextInstaller()
+        {
+            
+            monitorChoice mc = new monitorChoice();
+            mc.ShowDialog();
+            if (!File.Exists("Oculus.ico"))
+            {
+                getResource.get("OculusTool", "_Oculus.ico");
+                File.Move("_Oculus.ico", "Oculus.ico");
+            }
+            
+            using (RegistryKey key = Registry.ClassesRoot.OpenSubKey("exefile\\shell", true))
+            {
+                key.CreateSubKey("Open On Oculus Rift");
+                using (RegistryKey createSub = key.OpenSubKey("Open On Oculus Rift",true))
+                {
+                    createSub.CreateSubKey("Command");
+                    createSub.SetValue("Icon", "\"" + Program.workingDirectory + "\\oculus.ico\"", RegistryValueKind.ExpandString);
+                    using (RegistryKey set = key.OpenSubKey("Open On Oculus Rift\\Command", true))
+                    {                        
+                        set.SetValue("", "\"%1\" -adapter " + Program.monitor.ToString());
+                    }
+                }  
+            }
+            if (!contextInstalled())
+                MessageBox.Show("Installation Failed.");
+            else
+                MessageBox.Show("Installation Complete!", "Success!");
+        }
+
+        private void contextUninstaller()
+        {
+            using (RegistryKey key = Registry.ClassesRoot.OpenSubKey("exefile\\shell", true))
+            {
+                key.DeleteSubKeyTree("Open On Oculus Rift");
+            }
+        }
+        public static bool contextInstalled()
+        {
+            using (RegistryKey key = Registry.ClassesRoot.OpenSubKey("exefile\\shell\\Open On Oculus Rift\\command",false))
+            {
+                if (key == null)
+                    return false;
+                else
+                    return true;
+            }
+        }
     }
 }
 

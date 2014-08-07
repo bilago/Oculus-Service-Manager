@@ -61,6 +61,8 @@ namespace OculusTool
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
         }
-        
+
+
+        public static int monitor = 1;
     }
 }
