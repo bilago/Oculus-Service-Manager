@@ -17,7 +17,6 @@ namespace OculusTool
 {
     public partial class Form1 : Form
     {
-
         [DllImport("dwmapi.dll", PreserveSig = false)]
         public static extern int DwmEnableComposition(bool fEnable);
         [DllImport("dwmapi.dll", PreserveSig = false)]
@@ -26,18 +25,7 @@ namespace OculusTool
         public Form1()
         {
             InitializeComponent();
-            timer2.Start();
             
-            notifyIcon1.Visible = checkBox1.Checked;
-            this.Text = "Oculus Runtime Utility by Bilago v" + Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-            if (Program.wd)
-            {
-                if (!checkBox1.Checked)
-                    checkBox1.Checked = true;
-                this.WindowState = FormWindowState.Minimized;
-                this.ShowInTaskbar = false;
-            }
         }
 
         public string installPath;
@@ -107,7 +95,20 @@ namespace OculusTool
         }
 
         private void Form1_Load(object sender, EventArgs e)
-        {            
+        {
+            timer2.Start();
+
+            notifyIcon1.Visible = checkBox1.Checked;
+            this.Text = "Oculus Runtime Utility by Bilago v" + Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+            if (Program.wd)
+            {
+                if (!checkBox1.Checked)
+                    checkBox1.Checked = true;
+                this.WindowState = FormWindowState.Minimized;
+                this.ShowInTaskbar = false;
+            }
+
             installPath = getPath();
             label1.Text = "Service Status: " + checkService();
             label2.Text = "Path: " + installPath;
@@ -264,9 +265,13 @@ namespace OculusTool
                         File.Copy(fullRunPath, Program.workingDirectory + "\\" + exeName, true);
 
                     //Extracting sde.7z to working directory
-                    startHidden("sde_7z.exe", "-o \"" + Program.workingDirectory + "\" -y 2>extractDebugErrors.txt", true);
+                    startHidden("sde_7z.exe", "-o \"" + Program.workingDirectory + "\" -y", true);
+                    if (!string.IsNullOrEmpty(cmdOutput))
+                        File.WriteAllText("extract_Debug.txt", cmdOutput);
                     //Running the Emulation in the working directory
-                    startHidden("CMD.EXE", "/c sde.exe -- " + exeName + " 1>SSEFIX_debugStandard.txt 2>SSEFIX_debugError.txt", false);
+                    startHidden("CMD.EXE", "/c sde.exe -- " + exeName, false);
+                    if(!string.IsNullOrEmpty(cmdOutput))
+                        File.WriteAllText("SSEFIX_Debug.txt", cmdOutput);
                 }
                 catch(Exception ex)
                 {
@@ -362,6 +367,8 @@ namespace OculusTool
             File.Delete("CustomWatchdogx32.xml");
         }
 
+        public static string cmdOutput;
+        public static string cmdErrorOutput;
         /// <summary>
         /// method that starts a hidden process
         /// </summary>
@@ -369,18 +376,29 @@ namespace OculusTool
         /// <param name="arguments">Arguments to supply to the program</param>
         private void startHidden(string process, string arguments,bool wait)
         {
-            Process startProcess = new Process();
-            startProcess.StartInfo.FileName = process;
-            startProcess.StartInfo.Arguments = arguments;
-            startProcess.StartInfo.WorkingDirectory = Program.workingDirectory;
-            startProcess.StartInfo.CreateNoWindow = true;
-            startProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            startProcess.Start();
-            if (wait)
-                if (!startProcess.WaitForExit(3000))
-                    if (!startProcess.WaitForExit(5000))
-                        if (!startProcess.WaitForExit(20000))
-                            startProcess.Kill();
+            cmdOutput = "";
+            cmdErrorOutput = "";
+            Process cmd = new Process();
+            cmd.StartInfo.FileName = process;
+            cmd.StartInfo.Arguments = arguments;
+            cmd.StartInfo.UseShellExecute = false;
+            cmd.StartInfo.CreateNoWindow = true;
+            cmd.StartInfo.WorkingDirectory = Program.workingDirectory;
+            cmd.StartInfo.RedirectStandardOutput = true;
+            cmd.StartInfo.RedirectStandardError = true;
+            cmd.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            cmd.Start();
+
+            using (StreamReader sr = cmd.StandardOutput)
+            {
+                cmdOutput = sr.ReadToEnd();
+            }
+            using (StreamReader er = cmd.StandardError)
+            {
+                cmdErrorOutput = er.ReadToEnd();
+            }
+            
+            cmd.WaitForExit();
         }
 
         /// <summary>
@@ -548,7 +566,11 @@ namespace OculusTool
         {
             try
             {
+
             this.Enabled = false;
+            label3.Show();
+            label3.Enabled = true;
+            label3.BringToFront();
             List<string> report = new List<string>();
             report.Add("Oculus Troubleshooting Report: ");
             report.Add("");
@@ -638,10 +660,17 @@ namespace OculusTool
                 report.Add("");
                 report.Add("Oculus Connected Devices:");
 
-                startHidden("cmd.exe", "/c " + program + " find *VID_2833*PID_0201*REV_0002* >devConOutput.txt", true);
-                startHidden("cmd.exe", "/c " + program + " find *VID_2833*PID_0021*REV_02* >>devConOutput.txt", true);
-                foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
-                File.Delete("devConOutput.txt");
+                startHidden("cmd.exe", "/c " + program + " find *VID_2833*PID_0201*REV_0002*", true);
+                report.Add(cmdOutput);
+                startHidden("cmd.exe", "/c " + program + " find *VID_2833*PID_0021*REV_02*", true);
+                report.Add(cmdOutput);               
+                report.Add("");
+                report.Add("Rift Display Driver check:");
+                // Added this to check for the wrong monitor drivers installed for the rift!!
+                startHidden("cmd.exe", "/c " + program + " findall *ovr*", true);
+                report.Add(cmdOutput);
+                if (cmdOutput.ToLower().Contains("standard"))
+                    report.Add("[WARNING] One of the drivers listed above is incompatible with the OVRService! You need to Install the Microsoft Generic Monitor Driver!!");               
                 report.Add("");
                 report.Add("Lower Filter Search:");
                 report.Add("");
@@ -656,7 +685,11 @@ namespace OculusTool
                                 {
 
                                     foreach (string data in (string[])Key.GetValue("Lowerfilters"))
+                                    {
                                         report.Add(Key.ToString() + " LowerFilters Found: " + data);
+                                        if (data.ToLower().Contains("riftenable"))
+                                            report.Add("[Warning] Rift lowerfilter detected. This will cause issues. You need to remove this registry key!!");
+                                    }
                                 }
                         }
                     }
@@ -664,6 +697,43 @@ namespace OculusTool
 
                 report.Add("");
                 report.Add("===================================================================");
+                report.Add("Event logs:(Application) last 48 hours");
+                report.Add("Date\tTime\t\tEventID\tType\tSource\t\tError Message");
+                using (EventLog ovrLogs = new EventLog("Application", Environment.MachineName, "OculusVR"))
+                {
+                    //ovrLogs.Source = "OculusVR";
+                    //ovrLogs.Log = "Application";
+                    bool events = false;
+                    foreach (EventLogEntry entry in ovrLogs.Entries)
+                    {
+                        if (((DateTime.Now - entry.TimeGenerated).TotalHours <= 48.00) & entry.Source.Contains("OculusVR"))
+                        {
+                            string message = "";
+                            string[] messageData;
+                            if (entry.Message.Contains("in Source 'OculusVR' cannot be found"))
+                            {
+                                messageData = entry.Message.Split(':');
+                                message = string.Format("{0}: {1}",messageData[messageData.Length - 2],messageData[messageData.Length - 1]);
+                            }
+                            else
+                                message = entry.Message;
+
+                            report.Add(string.Format("{0}\t{1}\t{2}\t{3}:\t{4}", entry.TimeGenerated, entry.InstanceId, entry.EntryType, entry.Source, message));
+
+                            events=true;
+                        }
+                    }
+                    if (!events)
+                        report.Add("No events found for the last 48 hours. (That's a good thing!)");
+                }
+                
+                report.Add("");
+                report.Add("Running Processes:");
+                foreach (Process process in Process.GetProcesses())
+                {
+                    report.Add(process.ProcessName);
+                }
+                report.Add("");
                 report.Add("Services:");
                 foreach (ServiceController sc in ServiceController.GetServices())
                 {
@@ -671,17 +741,9 @@ namespace OculusTool
                 }
                 report.Add("");
                 report.Add("Listing All Installed Drivers: ");
-                startHidden("cmd.exe", "/c " + program + " driverfiles * >devConOutput.txt", true);
-                try
-                {
-                    foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
-                }
-                catch
-                {
-                    System.Threading.Thread.Sleep(5000);
-                    foreach (string line in File.ReadAllLines("devConOutput.txt")) report.Add(line);
-                }
-
+                startHidden("cmd.exe", "/c " + program + " driverfiles *", true);
+                report.Add(cmdOutput);
+               
                 report.Add("");
 
                 try
@@ -699,21 +761,29 @@ namespace OculusTool
                     }
                     catch
                     {
+                        label3.Enabled = false;
+                        label3.SendToBack();
+                        label3.Hide();
+                        
+                        this.Enabled = true;
                         MessageBox.Show("Unable to copy troubleshooting data to clipboard. Info has been written to \"Troubleshooting_DeviceInfo.txt\" instead.", "Cannot Write To Clipboard");
                         File.WriteAllLines("Troubleshooting_DeviceInfo.txt", report.ToArray());
-                        this.Enabled = true;
+                        
                         return;
                     }
                 }
-                MessageBox.Show("Debug info has been copied to clipboard! Paste information into a post or PM for support.");
-            
+                label3.Enabled = false;
+                label3.SendToBack();
+                label3.Hide();
                 this.Enabled = true;
-                
-              
+                MessageBox.Show("Debug info has been copied to clipboard! Paste information into a post or PM for support.");
             }
             }
             catch(Exception ex)
             {
+                label3.Enabled = false;
+                label3.SendToBack();
+                label3.Hide();
                 this.Enabled = true;
                 MessageBox.Show("There was a critical error running the troubleshooter. " + ex.Message); 
             }
@@ -732,6 +802,9 @@ namespace OculusTool
                 linkLabel2.Text = "Uninstall \"Context Adapter\"";
         }
 
+        /// <summary>
+        /// Adds an entry to the registry that lets you right click an exe and "Send to Rift" - adds -Adapter x to the arguments
+        /// </summary>
         private void contextInstaller()
         {
             
@@ -762,6 +835,9 @@ namespace OculusTool
                 MessageBox.Show("Installation Complete!", "Success!");
         }
 
+        /// <summary>
+        /// Removes the context registry information
+        /// </summary>
         private void contextUninstaller()
         {
             using (RegistryKey key = Registry.ClassesRoot.OpenSubKey("exefile\\shell", true))
@@ -769,6 +845,10 @@ namespace OculusTool
                 key.DeleteSubKeyTree("Open On Oculus Rift");
             }
         }
+        /// <summary>
+        /// Checks to see if the context registry hack is installed or not
+        /// </summary>
+        /// <returns></returns>
         public static bool contextInstalled()
         {
             using (RegistryKey key = Registry.ClassesRoot.OpenSubKey("exefile\\shell\\Open On Oculus Rift\\command",false))

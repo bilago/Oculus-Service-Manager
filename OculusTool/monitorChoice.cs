@@ -38,5 +38,11 @@ namespace OculusTool
             Program.monitor = 4;
             this.Close();
         }
+
+        private void linkLabel5_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Program.monitor = 5;
+            this.Close();
+        }
     }
 }
