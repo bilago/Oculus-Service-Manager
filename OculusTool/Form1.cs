@@ -21,7 +21,7 @@ namespace OculusTool
         public static extern int DwmEnableComposition(bool fEnable);
         [DllImport("dwmapi.dll", PreserveSig = false)]
         public static extern bool DwmIsCompositionEnabled();
-
+        
         public Form1()
         {
             InitializeComponent();
@@ -40,26 +40,26 @@ namespace OculusTool
             {
                 if (Program.is64BitOperatingSystem)
                 {
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Wow6432Node\\OculusRuntime\\InstallPath", false))
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Wow6432Node\\Oculus Inc.\\Oculus Runtime", false))
                     {
                         if (key != null)
                         {
-                            if (key.GetValue("OVRInstallDir", null) != null)
+                            if (key.GetValue("Location", null) != null)
                             {
-                                return key.GetValue("OVRInstallDir").ToString();
+                                return key.GetValue("Location").ToString();
                             }
                         }
                     }
                 }
                 else
                 {
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\OculusRuntime\\InstallPath", false))
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Oculus Inc.\\Oculus Runtime", false))
                     {
                         if (key != null)
                         {
-                            if (key.GetValue("OVRInstallDir", null) != null)
+                            if (key.GetValue("Location", null) != null)
                             {
-                                return key.GetValue("OVRInstallDir").ToString();
+                                return key.GetValue("Location").ToString();
                             }
                         }
                     }
@@ -120,8 +120,8 @@ namespace OculusTool
             
             if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat")))
                 checkBox1.Checked = true;
-            if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat")))
-                checkBox2.Checked=true;
+            //if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat")))
+            //    checkBox2.Checked=true;
 
             if (!contextInstalled())
                 linkLabel2.Text = "Install \"Context Adapter\"";
@@ -807,9 +807,15 @@ namespace OculusTool
         /// </summary>
         private void contextInstaller()
         {
+            string argument="";
             
             monitorChoice mc = new monitorChoice();
             mc.ShowDialog();
+            if (Program.dx11Force)
+                argument = "\"%1\" -force-d3d11 -adapter " + Program.monitor.ToString();
+            else
+                argument = "\"%1\" -adapter " + Program.monitor.ToString();
+
             if (!File.Exists("Oculus.ico"))
             {
                 getResource.get("OculusTool", "_Oculus.ico");
@@ -825,7 +831,7 @@ namespace OculusTool
                     createSub.SetValue("Icon", "\"" + Program.workingDirectory + "\\oculus.ico\"", RegistryValueKind.ExpandString);
                     using (RegistryKey set = key.OpenSubKey("Open On Oculus Rift\\Command", true))
                     {                        
-                        set.SetValue("", "\"%1\" -adapter " + Program.monitor.ToString());
+                        set.SetValue("", argument);
                     }
                 }  
             }

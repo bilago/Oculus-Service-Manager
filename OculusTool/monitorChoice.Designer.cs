@@ -34,21 +34,22 @@
             this.linkLabel3 = new System.Windows.Forms.LinkLabel();
             this.linkLabel4 = new System.Windows.Forms.LinkLabel();
             this.linkLabel5 = new System.Windows.Forms.LinkLabel();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 9);
+            this.label1.Location = new System.Drawing.Point(12, 41);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(240, 13);
+            this.label1.Size = new System.Drawing.Size(252, 13);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Choose how many monitors you have connected:";
+            this.label1.Text = "2. Choose how many monitors you have connected:";
             // 
             // linkLabel1
             // 
             this.linkLabel1.AutoSize = true;
-            this.linkLabel1.Location = new System.Drawing.Point(21, 33);
+            this.linkLabel1.Location = new System.Drawing.Point(32, 66);
             this.linkLabel1.Name = "linkLabel1";
             this.linkLabel1.Size = new System.Drawing.Size(13, 13);
             this.linkLabel1.TabIndex = 1;
@@ -59,7 +60,7 @@
             // linkLabel2
             // 
             this.linkLabel2.AutoSize = true;
-            this.linkLabel2.Location = new System.Drawing.Point(67, 33);
+            this.linkLabel2.Location = new System.Drawing.Point(78, 66);
             this.linkLabel2.Name = "linkLabel2";
             this.linkLabel2.Size = new System.Drawing.Size(13, 13);
             this.linkLabel2.TabIndex = 2;
@@ -70,7 +71,7 @@
             // linkLabel3
             // 
             this.linkLabel3.AutoSize = true;
-            this.linkLabel3.Location = new System.Drawing.Point(119, 33);
+            this.linkLabel3.Location = new System.Drawing.Point(130, 66);
             this.linkLabel3.Name = "linkLabel3";
             this.linkLabel3.Size = new System.Drawing.Size(13, 13);
             this.linkLabel3.TabIndex = 3;
@@ -81,7 +82,7 @@
             // linkLabel4
             // 
             this.linkLabel4.AutoSize = true;
-            this.linkLabel4.Location = new System.Drawing.Point(167, 33);
+            this.linkLabel4.Location = new System.Drawing.Point(178, 66);
             this.linkLabel4.Name = "linkLabel4";
             this.linkLabel4.Size = new System.Drawing.Size(13, 13);
             this.linkLabel4.TabIndex = 4;
@@ -92,7 +93,7 @@
             // linkLabel5
             // 
             this.linkLabel5.AutoSize = true;
-            this.linkLabel5.Location = new System.Drawing.Point(215, 33);
+            this.linkLabel5.Location = new System.Drawing.Point(226, 66);
             this.linkLabel5.Name = "linkLabel5";
             this.linkLabel5.Size = new System.Drawing.Size(13, 13);
             this.linkLabel5.TabIndex = 5;
@@ -100,11 +101,23 @@
             this.linkLabel5.Text = "5";
             this.linkLabel5.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel5_LinkClicked);
             // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.checkBox1.Location = new System.Drawing.Point(12, 12);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(173, 17);
+            this.checkBox1.TabIndex = 6;
+            this.checkBox1.Text = "1. Check to always force DX11";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            // 
             // monitorChoice
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(254, 59);
+            this.ClientSize = new System.Drawing.Size(277, 91);
+            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.linkLabel5);
             this.Controls.Add(this.linkLabel4);
             this.Controls.Add(this.linkLabel3);
@@ -130,5 +143,6 @@
         private System.Windows.Forms.LinkLabel linkLabel3;
         private System.Windows.Forms.LinkLabel linkLabel4;
         private System.Windows.Forms.LinkLabel linkLabel5;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }

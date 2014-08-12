@@ -112,7 +112,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="sde_7z.exe" />
+    <None Include="sde_7z.exe" />
     <EmbeddedResource Include="devcon32.exe" />
     <EmbeddedResource Include="devcon64.exe" />
     <EmbeddedResource Include="_Oculus.ico">

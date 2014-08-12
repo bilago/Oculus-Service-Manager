@@ -64,5 +64,6 @@ namespace OculusTool
 
 
         public static int monitor = 1;
+        public static bool dx11Force = false;
     }
 }
