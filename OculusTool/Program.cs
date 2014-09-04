@@ -46,7 +46,7 @@ namespace OculusTool
                 return false;
             }
         }
-        public static bool wd = false;
+        //public static bool wd = false;
         public static string exeName = Path.Combine(workingDirectory, Process.GetCurrentProcess().MainModule.FileName);
         /// <summary>
         /// The main entry point for the application.
@@ -55,8 +55,8 @@ namespace OculusTool
         static void Main(string[] args)
         {
             Directory.SetCurrentDirectory(workingDirectory);
-            if (args.Length != 0)
-                wd = true;
+            //if (args.Length != 0)
+            //    wd = true;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());

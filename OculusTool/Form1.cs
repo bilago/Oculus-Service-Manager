@@ -101,13 +101,13 @@ namespace OculusTool
             notifyIcon1.Visible = checkBox1.Checked;
             this.Text = "Oculus Runtime Utility by Bilago v" + Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-            if (Program.wd)
-            {
-                if (!checkBox1.Checked)
-                    checkBox1.Checked = true;
-                this.WindowState = FormWindowState.Minimized;
-                this.ShowInTaskbar = false;
-            }
+            //if (Program.wd)
+            //{
+            //    if (!checkBox1.Checked)
+            //        checkBox1.Checked = true;
+            //    this.WindowState = FormWindowState.Minimized;
+            //    this.ShowInTaskbar = false;
+            //}
 
             installPath = getPath();
             label1.Text = "Service Status: " + checkService();
@@ -118,8 +118,8 @@ namespace OculusTool
                 button3.Text = "Enable Aero";
             //quick way to auto start the watchdog if it was enabled
             
-            if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat")))
-                checkBox1.Checked = true;
+            //if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CustomOculusWatchdog.dat")))
+            //    checkBox1.Checked = true;
             //if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SSEFIX.dat")))
             //    checkBox2.Checked=true;
 
@@ -137,17 +137,25 @@ namespace OculusTool
         /// <returns></returns>
         public string checkService()
         {
-            foreach (Process p in Process.GetProcesses())
-            {                
-                if (p.ProcessName.ToLower().Contains("ovrservice_"))
+            //foreach (Process p in Process.GetProcesses())
+            //{                
+            //    if (p.ProcessName.ToLower().Contains("ovrservice_"))
+            //    {
+            //        button1.Text = "Stop Service";
+            //        return "Running";
+            //    }
+            //}
+            using (ServiceController sc = new ServiceController("ovrservice"))
+            {
+                if (sc.Status == ServiceControllerStatus.Running)
                 {
                     button1.Text = "Stop Service";
                     return "Running";
                 }
+
+                button1.Text = "Start Service";
+                return "Stopped";
             }
-            
-            button1.Text = "Start Service";
-            return "Stopped";
         }
 
         /// <summary>
@@ -216,12 +224,18 @@ namespace OculusTool
         private void stopService()
         {
             bool kill = false;
+            using (ServiceController sc = new ServiceController("ovrservice"))
+            {
+                if(sc.Status!= ServiceControllerStatus.Stopped)
+                    sc.Stop();
+                sc.WaitForStatus(ServiceControllerStatus.Stopped, new TimeSpan(0, 0, 20));
+                if(sc.Status!=ServiceControllerStatus.Stopped)
+                    MessageBox.Show("Was unable to stop the service!!", "error");
+            }
             foreach (Process p in Process.GetProcesses())
             {
 
-                if (p.ProcessName.ToLower().Contains("ovrservice_"))
-                    kill = true;
-                else if (p.ProcessName.ToLower().Contains("wscript"))
+                if (p.ProcessName.ToLower().Contains("ovrserver_"))
                     kill = true;
                 else if (p.ProcessName.ToLower().Contains("oculusconfigutil"))
                     kill = true;
@@ -245,59 +259,69 @@ namespace OculusTool
         private void startService()
         {
             stopService();
-            string exeName;
-            if (Program.is64BitOperatingSystem)
-            {
-                exeName = "OVRService_x64.exe";
-            }
-            else
-                exeName = "OVRService_x86.exe";
-            string workPath = Path.Combine(installPath, "Service\\");
-            string fullRunPath = Path.Combine(installPath, "Service\\" + exeName);            
-            
-            if (checkBox2.Checked)
-            {                                
-                string sdePath = Path.Combine(workPath, "sde.exe");
-                //Transferring the oculus driver to current directory. SDE.exe doesn't seem to work on files outside 
-                try
-                {
-                    if (!File.Exists(Program.workingDirectory + "\\" + exeName))
-                        File.Copy(fullRunPath, Program.workingDirectory + "\\" + exeName, true);
+            //string exeName;
+            //if (Program.is64BitOperatingSystem)
+            //{
+            //    exeName = "OVRService_x64.exe";
+            //}
+            //else
+            //    exeName = "OVRService_x86.exe";
+            //string workPath = Path.Combine(installPath, "Service\\");
+            //string fullRunPath = Path.Combine(installPath, "Service\\" + exeName);
 
-                    //Extracting sde.7z to working directory
-                    startHidden("sde_7z.exe", "-o \"" + Program.workingDirectory + "\" -y", true);
-                    if (!string.IsNullOrEmpty(cmdOutput))
-                        File.WriteAllText("extract_Debug.txt", cmdOutput);
-                    //Running the Emulation in the working directory
-                    startHidden("CMD.EXE", "/c sde.exe -- " + exeName, false);
-                    if(!string.IsNullOrEmpty(cmdOutput))
-                        File.WriteAllText("SSEFIX_Debug.txt", cmdOutput);
-                }
-                catch(Exception ex)
-                {
-                    MessageBox.Show("Fatal Error while Enabling the SSE-Fix. Full error written to SSE-Crash.log", "Fatal Error for SSE-Emulation");
-                    File.WriteAllText("SSE-Crash.log", ex.ToString());
-                }
-            }
-            else if (checkBox1.Checked)
+            using (ServiceController sc = new ServiceController("ovrservice"))
             {
-                //Starting the service directly since my watchdog is enabled
-                Process scriptProc = new Process();
-                scriptProc.StartInfo.FileName = fullRunPath;
-                scriptProc.StartInfo.WorkingDirectory = Path.Combine(installPath, "Service");                
-                scriptProc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                scriptProc.StartInfo.CreateNoWindow = true;
-                scriptProc.Start();
+                if (sc.Status != ServiceControllerStatus.Running)
+                    sc.Start();
+                sc.WaitForStatus(ServiceControllerStatus.Running, new TimeSpan(0, 0, 20));
+                if (sc.Status != ServiceControllerStatus.Running)
+                    MessageBox.Show("Was unable to start the service!!", "error");
             }
-            else
-            {               
+
+
+            //if (checkBox2.Checked)
+            //{                                
+            //    string sdePath = Path.Combine(workPath, "sde.exe");
+            //    //Transferring the oculus driver to current directory. SDE.exe doesn't seem to work on files outside 
+            //    try
+            //    {
+            //        if (!File.Exists(Program.workingDirectory + "\\" + exeName))
+            //            File.Copy(fullRunPath, Program.workingDirectory + "\\" + exeName, true);
+
+            //        //Extracting sde.7z to working directory
+            //        startHidden("sde_7z.exe", "-o \"" + Program.workingDirectory + "\" -y", true);
+            //        if (!string.IsNullOrEmpty(cmdOutput))
+            //            File.WriteAllText("extract_Debug.txt", cmdOutput);
+            //        //Running the Emulation in the working directory
+            //        startHidden("CMD.EXE", "/c sde.exe -- " + exeName, false);
+            //        if(!string.IsNullOrEmpty(cmdOutput))
+            //            File.WriteAllText("SSEFIX_Debug.txt", cmdOutput);
+            //    }
+            //    catch(Exception ex)
+            //    {
+            //        MessageBox.Show("Fatal Error while Enabling the SSE-Fix. Full error written to SSE-Crash.log", "Fatal Error for SSE-Emulation");
+            //        File.WriteAllText("SSE-Crash.log", ex.ToString());
+            //    }
+            //}
+            //else if (checkBox1.Checked)
+            //{
+            //    //Starting the service directly since my watchdog is enabled
+            //    Process scriptProc = new Process();
+            //    scriptProc.StartInfo.FileName = fullRunPath;
+            //    scriptProc.StartInfo.WorkingDirectory = Path.Combine(installPath, "Service");                
+            //    scriptProc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //    scriptProc.StartInfo.CreateNoWindow = true;
+            //    scriptProc.Start();
+            //}
+            //else
+            //{               
                 //starting the service with wscript since my watchdog is disabled
-                Process scriptProc = new Process();
-                scriptProc.StartInfo.FileName = Path.Combine(installPath, "Service\\LaunchAndRestart.vbs");
-                scriptProc.StartInfo.WorkingDirectory = Path.Combine(installPath, "Service");               
-                scriptProc.StartInfo.Arguments = "\"" + Path.Combine(installPath, "Service\\" + exeName) + "\"";
-                scriptProc.Start();
-            }
+                //Process scriptProc = new Process();
+                //scriptProc.StartInfo.FileName = Path.Combine(installPath, "Service\\LaunchAndRestart.vbs");
+                //scriptProc.StartInfo.WorkingDirectory = Path.Combine(installPath, "Service");               
+                //scriptProc.StartInfo.Arguments = "\"" + Path.Combine(installPath, "Service\\" + exeName) + "\"";
+                //scriptProc.Start();
+            //}
             //Sleep time - Config utility doesn't detect the service immediately, needs a little bit of time
             System.Threading.Thread.Sleep(300);
 
@@ -864,6 +888,13 @@ namespace OculusTool
                 else
                     return true;
             }
+        }
+
+        private void linkLabel3_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            startHidden("sc.exe", "failure ovrservice reset= 86400 actions= restart/1000/restart/1000/restart/1000",true);
+            //Process.Start("sc.exe", "ovrservice reset= 86400 actions= restart/1000/restart/1000/restart/1000");
+            MessageBox.Show("Service is now set to auto restart upon failure!");
         }
     }
 }
