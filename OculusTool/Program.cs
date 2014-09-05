@@ -5,11 +5,20 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Security.Principal;
 
 namespace OculusTool
 {
     static class Program
     {
+
+
+        private static bool isElevated()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
         public static string workingDirectory = AppDomain.CurrentDomain.BaseDirectory;
         
         static bool is64BitProcess = (IntPtr.Size == 8);
@@ -57,6 +66,12 @@ namespace OculusTool
             Directory.SetCurrentDirectory(workingDirectory);
             //if (args.Length != 0)
             //    wd = true;
+            if (!isElevated())
+            {
+                MessageBox.Show("You must run this program as an administrator!.", "Not Running as Administrator");
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());

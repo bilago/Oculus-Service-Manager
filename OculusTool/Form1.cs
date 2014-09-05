@@ -208,13 +208,19 @@ namespace OculusTool
         {
             if (label1.Text.ToLower().Contains("stopped"))
             {
+                button1.Text = "Starting...";
+                button1.Enabled = false;
                 startService();
+                button1.Enabled = true;
             }
             else
             {
+                button1.Text = "Stopping...";
+                button1.Enabled = false;
                 if (checkBox1.Checked)
                     MessageBox.Show("You have the custom watchdog enabled, which will automatically restart the service even though you just pressed stop.\nIf you want to turn the service off for good (until you turn it back on or reboot), uncheck \"Enable Custom Watchdog\" and press Stop again.", "[Warning] WatchDog Enabled", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 stopService();
+                button1.Enabled = true;
             }
         }
 
@@ -224,13 +230,20 @@ namespace OculusTool
         private void stopService()
         {
             bool kill = false;
-            using (ServiceController sc = new ServiceController("ovrservice"))
+            try
             {
-                if(sc.Status!= ServiceControllerStatus.Stopped)
-                    sc.Stop();
-                sc.WaitForStatus(ServiceControllerStatus.Stopped, new TimeSpan(0, 0, 20));
-                if(sc.Status!=ServiceControllerStatus.Stopped)
-                    MessageBox.Show("Was unable to stop the service!!", "error");
+                using (ServiceController sc = new ServiceController("ovrservice"))
+                {
+                    if (sc.Status != ServiceControllerStatus.Stopped)
+                        sc.Stop();
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, new TimeSpan(0, 0, 20));
+                    if (sc.Status != ServiceControllerStatus.Stopped)
+                        MessageBox.Show("Was unable to stop the service!!", "error");
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Unable To Start the Service..." + ex.Message, "Error");
             }
             foreach (Process p in Process.GetProcesses())
             {
@@ -244,7 +257,15 @@ namespace OculusTool
 
                 if (kill)
                 {
-                    p.Kill();                   
+                    try
+                    {
+                        p.Close();
+                        if(!p.WaitForExit(3000))
+                            p.Kill();
+                    }
+                    catch
+                    {
+                    }
                 }
                 
             }
@@ -268,14 +289,20 @@ namespace OculusTool
             //    exeName = "OVRService_x86.exe";
             //string workPath = Path.Combine(installPath, "Service\\");
             //string fullRunPath = Path.Combine(installPath, "Service\\" + exeName);
-
-            using (ServiceController sc = new ServiceController("ovrservice"))
+            try
             {
-                if (sc.Status != ServiceControllerStatus.Running)
-                    sc.Start();
-                sc.WaitForStatus(ServiceControllerStatus.Running, new TimeSpan(0, 0, 20));
-                if (sc.Status != ServiceControllerStatus.Running)
-                    MessageBox.Show("Was unable to start the service!!", "error");
+                using (ServiceController sc = new ServiceController("ovrservice"))
+                {
+                    if (sc.Status != ServiceControllerStatus.Running)
+                        sc.Start();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, new TimeSpan(0, 0, 20));
+                    if (sc.Status != ServiceControllerStatus.Running)
+                        MessageBox.Show("Was unable to start the service!!", "error");
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Unable To Start the Service..." + ex.Message, "Error");
             }
 
 

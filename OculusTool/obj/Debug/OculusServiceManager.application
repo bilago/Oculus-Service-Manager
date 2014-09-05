@@ -4,14 +4,14 @@
   <description asmv2:publisher="Microsoft" asmv2:product="OculusServiceManager" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <deployment install="true" mapFileExtensions="true" />
   <dependency>
-    <dependentAssembly dependencyType="install" codebase="OculusServiceManager.exe.manifest" size="4996">
+    <dependentAssembly dependencyType="install" codebase="OculusServiceManager.exe.manifest" size="4998">
       <assemblyIdentity name="OculusServiceManager.exe" version="1.0.0.0" publicKeyToken="0000000000000000" language="neutral" processorArchitecture="msil" type="win32" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
-        <dsig:DigestValue>DW8pRLfhTuk1oy6d6wB+mVoC0Dk=</dsig:DigestValue>
+        <dsig:DigestValue>PxGg4hhHxgAaGOunZ1tfPuu9CLE=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

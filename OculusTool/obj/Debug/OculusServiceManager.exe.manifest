@@ -4,7 +4,7 @@
   <description asmv2:iconFile="PerfCenterCpl.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="OculusServiceManager" version="1.0.5360.22444" language="neutral" processorArchitecture="msil" />
+    <assemblyIdentity name="OculusServiceManager" version="1.0.5360.28978" language="neutral" processorArchitecture="msil" />
     <commandLine file="OculusServiceManager.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -43,14 +43,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="OculusServiceManager.exe" size="662016">
-      <assemblyIdentity name="OculusServiceManager" version="1.0.5360.22444" language="neutral" processorArchitecture="msil" />
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="OculusServiceManager.exe" size="663040">
+      <assemblyIdentity name="OculusServiceManager" version="1.0.5360.28978" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
-        <dsig:DigestValue>ppBGzVasBEoBjr2nFDZrQCw0W3c=</dsig:DigestValue>
+        <dsig:DigestValue>MO/2b5wR36Z2Q/eWGoIHppewnsE=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
